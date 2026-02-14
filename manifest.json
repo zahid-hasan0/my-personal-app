@@ -1,6 +1,6 @@
 {
     "name": "Personal Manager",
-    "short_name": "PM",
+    "short_name": "Personal Manager",
     "description": "Personal Finance & Debt Manager",
     "start_url": "./index.html",
     "display": "standalone",

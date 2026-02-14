@@ -1,16 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCKeOU_kwe3gfNQw2v49pff_NQMjt5WvtE",
-    authDomain: "purches-form.firebaseapp.com",
-    projectId: "purches-form",
-    storageBucket: "purches-form.firebasestorage.app",
-    messagingSenderId: "162081115542",
-    appId: "1:162081115542:web:f612688483afb5a7aa21b7"
+    apiKey: "AIzaSyBBQIEDyziVjGJgPte5M4Tr1Yz5FWhRaas",
+    authDomain: "my-personal-app-5c7f1.firebaseapp.com",
+    projectId: "my-personal-app-5c7f1",
+    storageBucket: "my-personal-app-5c7f1.firebasestorage.app",
+    messagingSenderId: "431743980626",
+    appId: "1:431743980626:web:93dbcf45df3dd5172bbb8b",
+    measurementId: "G-S9TCDDHPQ8"
 };
 
 const fbApp = initializeApp(firebaseConfig);
-export const auth = getAuth(fbApp);
 export const db = getFirestore(fbApp);

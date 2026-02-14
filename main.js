@@ -1,14 +1,12 @@
 import {
-  onAuthStateChanged,
-  signInAnonymously
-} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import {
   doc,
   getDoc,
   setDoc,
-  enableIndexedDbPersistence
+  enableMultiTabIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
+
+const GLOBAL_USER_ID = 'my_personal_manager_data';
 
 // State Management
 const state = {
@@ -18,7 +16,6 @@ const state = {
   loans: JSON.parse(localStorage.getItem('loans')) || [],
   names: JSON.parse(localStorage.getItem('names')) || [], // For people
   categories: JSON.parse(localStorage.getItem('categories')) || ["বাজার খরচ", "বাসা ভাড়া", "যাতায়াত", "মোবাইল বিল", "অন্যান্য"], // For expenses
-  user: null,
   selectedPerson: null,
 };
 
@@ -115,10 +112,10 @@ function saveLocally() {
 }
 
 async function saveToFirebase() {
-  if (!state.user || isSyncing) return;
+  if (isSyncing) return;
   isSyncing = true;
   try {
-    const userDocRef = doc(db, "users", state.user.uid);
+    const userDocRef = doc(db, "users", GLOBAL_USER_ID);
     await setDoc(userDocRef, {
       expenses: state.expenses,
       debts: state.debts,
@@ -129,7 +126,7 @@ async function saveToFirebase() {
     });
   } catch (e) {
     console.error("Firebase Save Error:", e);
-    window.showToast('সংরক্ষণ ব্যর্থ হয়েছে', 'error');
+    // Silent fail for background sync
   } finally {
     isSyncing = false;
   }
@@ -140,47 +137,38 @@ async function persistData() {
   await saveToFirebase();
 }
 
-// Seamless Auth Initialization
-function initAuth() {
-  // Try to enable offline persistence for Firestore
+async function initDataSync() {
+  // Try to enable multi-tab offline persistence for Firestore
   try {
-    enableIndexedDbPersistence(db);
+    await enableMultiTabIndexedDbPersistence(db);
   } catch (err) {
-    console.warn("Persistence error:", err.code);
+    if (err.code == 'failed-precondition') {
+      console.warn("Multiple tabs open, persistence can only be enabled in one tab.");
+    } else if (err.code == 'unimplemented') {
+      console.warn("The current browser does not support persistence.");
+    } else {
+      console.warn("Persistence error:", err);
+    }
   }
 
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      state.user = user;
-      await startSync();
-    } else {
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        console.error("Anonymous Auth Error:", error);
-        render(); // Render even if auth fails
-      }
-    }
-  });
+  startSync();
 }
 
 async function startSync() {
-  if (!state.user) return;
-
-  const userDocRef = doc(db, "users", state.user.uid);
+  const userDocRef = doc(db, "users", GLOBAL_USER_ID);
   try {
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
-      // Only update if cloud data exists
-      state.expenses = data.expenses || state.expenses;
-      state.debts = data.debts || state.debts;
-      state.loans = data.loans || state.loans;
-      state.names = data.names || state.names;
-      state.categories = data.categories || state.categories;
+      // Only update local state if cloud data is actually present
+      if (data.expenses) state.expenses = data.expenses;
+      if (data.debts) state.debts = data.debts;
+      if (data.loans) state.loans = data.loans;
+      if (data.names) state.names = data.names;
+      if (data.categories) state.categories = data.categories;
       saveLocally();
     } else {
-      // New cloud user, upload local data
+      // First time use or no cloud data, upload local data if exists
       await saveToFirebase();
     }
   } catch (e) {
@@ -232,12 +220,12 @@ function renderHeader() {
     // Determine Day Period
     let periodLabel = 'এখন রাত';
     let iconClass = 'fa-moon';
-    let iconColor = '#6366f1';
+    let iconColor = '#2529f3ff';
 
     if (hour >= 5 && hour < 11) {
       periodLabel = 'এখন সকাল';
       iconClass = 'fa-cloud-sun';
-      iconColor = '#fbbf24';
+      iconColor = '#f8c238ff';
     } else if (hour >= 11 && hour < 16) {
       periodLabel = 'এখন দুপুর';
       iconClass = 'fa-sun';
@@ -479,7 +467,7 @@ function renderDebtsView(container) {
   const peopleBalances = {};
   state.debts.forEach(d => {
     if (!peopleBalances[d.person]) peopleBalances[d.person] = 0;
-    peopleBalances[d.person] += (d.type === 'receive' ? Number(d.amount) : -Number(d.amount));
+    peopleBalances[d.person] += (d.type === 'give' ? Number(d.amount) : -Number(d.amount));
   });
 
   let pabo = 0;
@@ -492,11 +480,11 @@ function renderDebtsView(container) {
   container.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 10px 20px;">
             <div class="glass" style="padding: 20px; border-bottom: 3px solid var(--success)">
-               <span style="font-size: 11px; color: var(--text-muted)">পেলাম</span>
+               <span style="font-size: 11px; color: var(--text-muted)">পাবো</span>
                <div style="font-size: 18px; font-weight: 800; color: var(--success)">৳ ${pabo.toLocaleString()}</div>
             </div>
             <div class="glass" style="padding: 20px; border-bottom: 3px solid var(--danger)">
-               <span style="font-size: 11px; color: var(--text-muted)">দিলাম</span>
+               <span style="font-size: 11px; color: var(--text-muted)">দেবো</span>
                <div style="font-size: 18px; font-weight: 800; color: var(--danger)">৳ ${debo.toLocaleString()}</div>
             </div>
         </div>
@@ -535,7 +523,8 @@ window.handleOpenLedger = () => {
 function renderDebtDetailView(container) {
   const person = state.selectedPerson;
   const personHistory = state.debts.filter(d => d.person === person);
-  const personNet = personHistory.reduce((s, h) => s + (h.type === 'receive' ? Number(h.amount) : -Number(h.amount)), 0);
+  const personNet = personHistory.reduce((s, h) => s + (h.type === 'give' ? Number(h.amount) : -Number(h.amount)), 0);
+  const today = new Date().toISOString().split('T')[0];
 
   container.innerHTML = `
         <div style="padding: 0 20px 20px 20px;">
@@ -547,7 +536,7 @@ function renderDebtDetailView(container) {
         <div class="banner glass" style="--accent-color: var(--accent-blue); margin-top: 0;">
             <div>
                 <span class="banner-title"><b style="color: var(--accent-blue)">${person}</b>-এর নেট ব্যালেন্স</span>
-                <div class="banner-value" style="color: ${personNet >= 0 ? 'var(--success)' : 'var(--danger)'}">৳ ${Math.abs(personNet).toLocaleString()} ${personNet >= 0 ? '(পেলাম)' : '(দিলাম)'}</div>
+                <div class="banner-value" style="color: ${personNet >= 0 ? 'var(--success)' : 'var(--danger)'}">৳ ${Math.abs(personNet).toLocaleString()} ${personNet >= 0 ? '(পাবেন)' : '(দিবেন)'}</div>
             </div>
         </div>
 
@@ -560,7 +549,7 @@ function renderDebtDetailView(container) {
                 </select>
                 <input type="number" class="input-field" id="quick-debt-amount" placeholder="টাকার পরিমাণ" style="margin-top:0; height: 50px;">
             </div>
-            <input type="date" class="input-field" id="quick-debt-date" style="margin-top: 10px;">
+            <input type="date" class="input-field" id="quick-debt-date" value="${today}" style="margin-top: 10px;">
             <button class="action-btn" style="background: var(--success); color: white; margin-top: 16px; height: 50px; font-size: 18px;" onclick="window.quickAddDebtLogic()">যোগ করুন</button>
         </div>
 
@@ -571,11 +560,11 @@ function renderDebtDetailView(container) {
     return `
                 <div class="list-item">
                     <div class="item-info">
-                        <h4>${d.type === 'receive' ? 'পেলাম' : 'দিলাম'}</h4>
+                        <h4>${d.type === 'give' ? 'দিলাম' : 'পেলাম'}</h4>
                         <p>${new Date(d.date).toLocaleDateString()}</p>
                     </div>
-                    <div class="item-amount" style="color: ${d.type === 'receive' ? 'var(--success)' : 'var(--danger)'}">
-                        ${d.type === 'receive' ? '+' : '-'} ৳ ${Number(d.amount).toLocaleString()}
+                    <div class="item-amount" style="color: ${d.type === 'give' ? 'var(--success)' : 'var(--danger)'}">
+                        ${d.type === 'give' ? '+' : '-'} ৳ ${Number(d.amount).toLocaleString()}
                     </div>
                     <i class="fa-solid fa-trash-can" style="color:rgba(0,0,0,0.1); margin-left: 10px; cursor: pointer;" onclick="window.deleteItem('debts', ${globalIdx})"></i>
                 </div>
@@ -770,7 +759,7 @@ function renderReportView(container) {
       const val = Number(item[amountField]) * multiplier;
       if (type === 'expenses') reportData[monthKey].expenses += val;
       if (type === 'loans') reportData[monthKey].loans += (item.type === 'loan' ? val : -val);
-      if (type === 'debts') reportData[monthKey].debts += (item.type === 'receive' ? val : -val);
+      if (type === 'debts') reportData[monthKey].debts += (item.type === 'give' ? val : -val);
     });
   };
 
@@ -840,7 +829,7 @@ function setupKeyboardListeners() {
 }
 
 // Start
-initAuth();
+initDataSync();
 render(); // Initial local render
 setTimeout(setupKeyboardListeners, 1000);
 
