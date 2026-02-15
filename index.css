@@ -11,6 +11,7 @@
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
+    --primary: #0ea5e9;
 
     /* Premium Glassmorphism */
     --glass-surface: rgba(255, 255, 255, 0.75);
@@ -23,7 +24,7 @@
         0 10px 15px -3px rgba(0, 0, 0, 0.03),
         0 20px 25px -5px rgba(0, 0, 0, 0.02);
 
-    --font-main: 'Tiro Bangla', 'Inter', system-ui, -apple-system, sans-serif;
+    --font-main: 'Outfit', 'Tiro Bangla', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -479,4 +480,64 @@ label {
 
 .modal-btn:active {
     opacity: 0.8;
+}
+
+/* Collapsible Form Styles */
+.collapsible-header {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 18px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    margin: 0 20px 10px 20px;
+    transition: all 0.3s ease;
+}
+
+.collapsible-header:hover {
+    border-color: var(--accent-blue);
+    background: #f0f9ff;
+}
+
+.collapsible-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.collapsible-header i {
+    transition: transform 0.3s ease;
+    color: var(--text-muted);
+}
+
+.collapsible-header.active i {
+    transform: rotate(180deg);
+    color: var(--accent-blue);
+}
+
+.collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, opacity 0.2s ease;
+    opacity: 0;
+}
+
+.collapsible-content.active {
+    max-height: 500px;
+    opacity: 1;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }

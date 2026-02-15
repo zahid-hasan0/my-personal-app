@@ -1,5 +1,20 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import {
+    getAuth,
+    setPersistence,
+    browserLocalPersistence,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    signOut,
+    onAuthStateChanged,
+    updateProfile,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult
+} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBBQIEDyziVjGJgPte5M4Tr1Yz5FWhRaas",
@@ -13,3 +28,7 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 export const db = getFirestore(fbApp);
+export const auth = getAuth(fbApp);
+setPersistence(auth, browserLocalPersistence);
+export const googleProvider = new GoogleAuthProvider();
+export { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, signInWithPopup, signInWithRedirect, getRedirectResult, sendPasswordResetEmail };
