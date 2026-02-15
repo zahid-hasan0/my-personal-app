@@ -819,62 +819,72 @@ function renderTodosView(container) {
   const todayTodos = state.todos.filter(t => t.date === today && !t.deleted);
   const completed = todayTodos.filter(t => t.completed).length;
   const total = todayTodos.length;
+  const remaining = total - completed;
+
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const dateStr = new Date().toLocaleDateString('bn-BD', { weekday: 'long', day: 'numeric', month: 'long' });
 
   container.innerHTML = `
-        <div style="padding: 0 20px 10px 20px; display: flex; justify-content: flex-end;">
-            <button onclick="window.goToReport('todos')" style="background: rgba(26, 179, 148, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600;">
-                রিপোর্ট দেখুন <i class="fa-solid fa-arrow-right"></i>
-            </button>
-        </div>
-        ${total > 0 ? `
-        <div style="padding: 20px 20px 0 20px;">
-            <div style="display: flex; gap: 10px; margin-bottom: 24px;">
-                <div style="flex: 1; padding: 12px 16px; background: #f0fdf4; border-left: 3px solid var(--success); border-radius: 8px;">
-                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">সম্পন্ন</div>
-                    <div style="font-size: 20px; font-weight: 700; color: var(--success);">${bnNum(completed)} টি</div>
+        <div class="banner glass" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.3); position: relative; display: block;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--success); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">আজকের টাস্ক</span>
+                    <h2 style="font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0; line-height: 1.1;">${bnNum(remaining)} <span style="font-size: 16px; font-weight: 600; color: var(--text-muted);">টি বাকি</span></h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px; font-weight: 500;">${dateStr}</p>
                 </div>
-                <div style="flex: 1; padding: 12px 16px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 8px;">
-                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">বাকি</div>
-                    <div style="font-size: 20px; font-weight: 700; color: #f59e0b;">${bnNum(total - completed)} টি</div>
+                <div style="text-align: right;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15); cursor: pointer; transition: transform 0.2s;" onclick="window.goToReport('todos')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fa-solid fa-chart-pie" style="color: var(--success); font-size: 20px;"></i>
+                    </div>
                 </div>
             </div>
-            ` : ''}
+
+            <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-secondary);">
+                    <span>প্রগ্রেস</span>
+                    <span>${bnNum(percent)}%</span>
+                </div>
+                <div style="background: white; height: 8px; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                    <div style="background: linear-gradient(90deg, var(--success), #34d399); height: 100%; width: ${percent}%; border-radius: 20px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);"></div>
+                </div>
+            </div>
         </div>
 
-        <div style="padding: 0 20px 20px 20px;">
-            <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e5e7eb; margin-bottom: 20px;">
-                <input type="text" class="input-field" id="todo-text" placeholder="নতুন কাজ যোগ করুন..." 
-                       style="border: none; padding: 0; font-size: 15px; margin-bottom: 12px;"
+        <div class="form-card glass">
+             <label style="margin-bottom: 8px; display: block; color: var(--text-secondary); font-size: 12px; font-weight: 600;">নতুন কাজ</label>
+             <div style="display: flex; gap: 10px;">
+                <input type="text" class="input-field" id="todo-text" placeholder="কাজের বিবরণ লিখুন..." 
+                       style="margin-bottom: 0;"
                        onkeypress="if(event.key==='Enter') window.addTodo()">
                 <button class="action-btn btn-primary" onclick="window.addTodo()" 
-                        style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600;">
-                    <i class="fa-solid fa-plus" style="margin-right: 8px;"></i> যোগ করুন
+                        style="width: auto; margin-top: 0; padding: 0 20px; white-space: nowrap;">
+                    <i class="fa-solid fa-plus"></i>
                 </button>
-            </div>
+             </div>
+        </div>
 
-            <div style="space-y: 12px;">
-                ${todayTodos.map((todo) => `
-                    <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid ${todo.completed ? '#10b981' : '#e5e7eb'}; transition: all 0.2s;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+        <div class="list-container">
+            <h3 style="margin-left: 10px; margin-bottom: 12px; font-size: 14px; color: var(--text-secondary)">কাজের তালিকা</h3>
+            ${todayTodos.map((todo) => `
+                <div class="list-item" style="transition: all 0.2s; ${todo.completed ? 'opacity: 0.7;' : ''}">
+                    <div class="item-info" style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} 
                                    onchange="window.toggleTodo('${todo.id}')" 
-                                   style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--success); flex-shrink: 0;">
-                            <div style="flex: 1; font-size: 15px; color: ${todo.completed ? 'var(--text-muted)' : 'var(--text-main)'}; text-decoration: ${todo.completed ? 'line-through' : 'none'}; font-weight: ${todo.completed ? '400' : '500'};">
-                                ${todo.text}
-                            </div>
-                            <i class="fa-solid fa-trash-can" onclick="window.deleteTodo('${todo.id}')" 
-                               style="color: #ef4444; opacity: 0.4; cursor: pointer; font-size: 16px; transition: opacity 0.2s; flex-shrink: 0;"
-                               onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'"></i>
+                                   style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--success); flex-shrink: 0;">
+                        <div style="flex: 1;">
+                            <h4 style="${todo.completed ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text-main);'} font-size: 15px;">${todo.text}</h4>
                         </div>
+                        <i class="fa-solid fa-trash-can" onclick="window.deleteTodo('${todo.id}')" 
+                           style="color: var(--danger); opacity: 0.3; cursor: pointer; font-size: 14px; padding: 8px;"
+                           onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.3'"></i>
                     </div>
-                `).join('')}
-            </div>
+                </div>
+            `).join('')}
             
             ${todayTodos.length === 0 ? `
-                <div style="text-align: center; padding: 60px 20px;">
-                    <i class="fa-solid fa-clipboard-list" style="font-size: 48px; color: #e5e7eb; margin-bottom: 16px;"></i>
-                    <p style="font-size: 16px; color: var(--text-muted); margin: 0;">আজকের জন্য কোনো কাজ নেই</p>
-                    <p style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">উপরে নতুন কাজ যোগ করুন</p>
+                <div style="text-align: center; padding: 40px 20px;">
+                    <i class="fa-solid fa-clipboard-list" style="font-size: 32px; color: #e5e7eb; margin-bottom: 12px;"></i>
+                    <p style="font-size: 14px; color: var(--text-muted);">আজকের জন্য কোনো কাজ নেই</p>
                 </div>
             ` : ''}
         </div>
